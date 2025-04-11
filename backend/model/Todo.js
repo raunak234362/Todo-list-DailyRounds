@@ -6,13 +6,15 @@ const noteSchema = new mongoose.Schema({
 });
 
 const todoSchema = new mongoose.Schema({
+  _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
   title: { type: String, required: true },
   description: String,
-  tags: [String],
   priority: { type: String, enum: ['High', 'Medium', 'Low'], default: 'Low' },
-  mentionedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  completed: { type: Boolean, default: false },
+  assignedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  tags: [String],
   notes: [noteSchema],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  updatedAt: { type: Date, default: Date.now },
   createdAt: { type: Date, default: Date.now },
 });
 
