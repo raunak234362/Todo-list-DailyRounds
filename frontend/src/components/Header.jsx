@@ -19,7 +19,7 @@ const Header = ({ users, onUserChange, selectedUserId, selectedUser,onExtractCSV
                                 onChange={(e) => onUserChange(e.target.value)}
                             >
                                 {users.map((user, index) => (
-                                    <option key={index} value={user.username}>{user.username}</option>
+                                    <option key={index} value={user._id}>{user.username}</option>
                                 ))}
                             </select>
                         </div>

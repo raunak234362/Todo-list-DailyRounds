@@ -1,9 +1,11 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react'
 import Header from "./components/Header"
 import Sidebar from './components/Sidebar'
 import Todolist from './components/Todolist'
 import Pagination from './utils/Pagination'
 import Service from './api/Service'
+import TodoByID from './components/TodoByID'
 
 function App() {
   const [users, setUsers] = useState([])
@@ -11,17 +13,22 @@ function App() {
   const [selectedUser, setSelectedUser] = useState(null)
 
   const [todos, setTodos] = useState([])
+  const [todoByID, setTodoByID] = useState(null)
 
+  const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [filters, setFilters] = useState({
     priority: {
-      high: false,
-      medium: false,
-      low: false,
+      High: false,
+      Medium: false,
+      Low: false,
     },
   })
 
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  //fetchUsers function to fetch all users from the API
   const fetchUsers = async () => {
     const response = await Service.getAllUsers()
     setUsers(response)
@@ -32,34 +39,56 @@ function App() {
   }
 
 
-
-  const handleAddTodo = (newTodo) => {
-    console.log(newTodo)
+  //AddTodo function to add a new todo
+  const handleAddTodo = async (newTodo) => {
     try {
-      const response = Service.createTodo(newTodo)
-      setTodos((prev) => [...prev, response])
+      const response = await Service.createTodo(newTodo);
+      setTodos((prev) => Array.isArray(prev) ? [...prev, response] : [response]);
     } catch (error) {
-      console.error("Error adding todo:", error)
+      console.error("Error adding todo:", error);
     }
   }
 
+  //fetchTodos function to fetch all todos from the API
   const fetchTodos = async () => {
-    const response = await Service.getTodos()
-    setTodos(response)
+    const selectedPriorities = Object.entries(filters.priority)
+      .filter(([_, val]) => val)
+      .map(([key]) => key);
+
+    const response = await Service.getTodos({
+      page: currentPage,
+      limit: 10,
+      user: selectedUserId,
+      priority: selectedPriorities,
+      search: searchQuery,
+    });
+
+    setTodos(response);
+    console.log(response)
+    setTotalPages(response.totalPages);
+  };
+
+  //Fetch todos by ID
+  const fetchTodoById = async (id) => {
+    try {
+      const response = await Service.getTodoById(id)
+      setTodoByID(response)
+      console.log(response)
+    } catch (error) {
+      console.error("Error fetching todo by ID:", error)
+    }
   }
+
+
 
   const exportAllTodos = async () => {
     try {
-      await Service.exportTodos()
+     const response= await Service.exportTodos()
+     console.log(response)
     } catch (error) {
       console.error("Error exporting todos:", error)
     }
   }
-
-  // const fetchTodoByID = async (id) => {
-  //   const response = await Service.getTodoByID(id)
-  //   setTodos((prev) => prev.map((todo) => (todo.id === id ? response : todo)))
-  // }
 
   const handleDeleteTodo = async (id) => {
     try {
@@ -70,14 +99,11 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    fetchUsers()
-    fetchTodos()
-  }, [])
-
   const handleUserChange = (userId) => {
     setSelectedUserId(userId)
+    console.log(userId)
     const user = users.find((u) => u._id === userId)
+
     setSelectedUser(user)
   }
 
@@ -95,18 +121,26 @@ function App() {
     }))
   }
 
-  const handleTodoToggle = (id) => {
-    setTodos(todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)))
+  const handleTodoToggle = (username) => {
+    setTodos(todos.map((todo) => (todo.username === username ? { ...todo, completed: !todo.completed } : todo)))
   }
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
   }
 
-  // Filter todos based on selected user
-  const filteredTodos = selectedUserId
-    ? todos.filter((todo) => todo.assignedUsers && todo.assignedUsers.map(user => user._id).includes(selectedUserId))
-    : todos
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedUserId, filters]);
+
+
+  useEffect(() => {
+    fetchTodos();
+  }, [selectedUserId, filters, currentPage, todos.length]);
 
   return (
     <div className='min-h-screen flex flex-col bg-white'>
@@ -122,7 +156,8 @@ function App() {
 
         <main className='flex-1 p-5'>
           <Todolist
-            todos={filteredTodos}
+            todos={todos}
+            todoByID={fetchTodoById}
             onTodoToggle={handleTodoToggle}
             onSearchChange={handleSearchChange}
             searchQuery={searchQuery}
@@ -131,7 +166,9 @@ function App() {
             onDeleteTodo={handleDeleteTodo}
           />
 
-          <Pagination currentPage={currentPage} totalPages={10} onPageChange={handlePageChange} />
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+          <TodoByID todo={todoByID} onClose={() => setTodoByID(null)} />
+
         </main>
       </div>
     </div>

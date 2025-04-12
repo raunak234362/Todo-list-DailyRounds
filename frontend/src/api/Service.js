@@ -14,10 +14,31 @@ class Service {
     console.log(response.data);
     return response.data;
   }
+  
+  //To get todo 
+  static async getTodos({ page, limit, user, priority, tags }) {
+    const params = new URLSearchParams();
+  
+    if (page) params.append('page', page);
+    if (limit) params.append('limit', limit);
+    if (user) params.append('user', user);
+    if (priority) params.append('priority', priority);
+    if (tags && tags.length) params.append('tags', tags.join(','));
+  
+    const response = await axiosApi.get(`/todos?${params.toString()}`);
+    return response.data;
+  }
 
   //To get todo by ID
-  static async getTodos() {
-    const response = await axiosApi.get("/todos");
+  static async getTodoById(id) {
+    const response = await axiosApi.get(`/todos/${id}`);
+    console.log(response.data);
+    return response.data;
+  }
+
+  //To update todo by ID
+  static async updateTodo(id, updatedtodo) {
+    const response = await axiosApi.put(`/todos/${id}`, updatedtodo);
     console.log(response.data);
     return response.data;
   }
@@ -35,9 +56,9 @@ class Service {
       const response = await axiosApi.get("/todos/export", {
         responseType: "blob",
       });
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-
+  
+      const url = window.URL.createObjectURL(response.data); // no need for .blob()
+  
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", "todos.csv");
@@ -48,5 +69,6 @@ class Service {
       console.error("Error exporting todos:", error);
     }
   }
+  
 }
 export default Service;

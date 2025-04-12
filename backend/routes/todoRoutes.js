@@ -28,16 +28,91 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get all todos
-router.get("/", async (req, res) => {
+// Get All Todos with Pagination, Sorting, Filtering
+router.get('/', async (req, res) => {
   try {
-    const todos = await Todo.find().populate("assignedUsers", "username");
-    res.status(200).json(todos);
+    const { page = 1, limit = 10, tags, priority,search , user, sortBy = 'createdAt', order = 'desc' } = req.query;
+    const filter = {};
+    if (tags) filter.tags = { $in: tags.split(',') };
+    if (priority) filter.priority = priority;
+    if (user) filter.assignedUsers = user;
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const todos = await Todo.find(filter)
+      .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit))
+      .populate('assignedUsers', 'username');
+
+    res.json(todos);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
+router.get("/export", async (req, res) => {
+  try {
+    // Fetch all todos from the database
+    const todos = await Todo.find().populate("assignedUsers", "username");
+
+    const fields = [
+      { label: "ID", value: "_id" },
+      { label: "Title", value: "title" },
+      { label: "Description", value: "description" },
+      { label: "Priority", value: "priority" },
+      { label: "Completed", value: "completed" },
+      {
+        label: "Assigned Users",
+        value: row => row.assignedUsers?.map(user => user.username).join(", ") || ""
+      },
+      { label: "Created At", value: "createdAt" },
+    ];
+
+    const json2csvParser = new Parser({ fields });
+    const csv = json2csvParser.parse(todos);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("todos.csv");
+    res.send(csv);
+  } catch (error) {
+    console.error("Error exporting todos:", error);
+    res.status(500).json({ error: "Failed to export todos" });
+  }
+});
+
+//get todo by ID
+router.get("/:id", async (req, res) => {
+  try {
+    const todo = await Todo.findById(req.params.id).populate("assignedUsers", "username");
+    if (!todo) {
+      return res.status(404).json({ message: "Todo not found" });
+    }
+    res.status(200).json(todo);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update Todo
+router.put('/:id', async (req, res) => {
+  try {
+    const { title, description, tags, priority, mentionedUsernames } = req.body;
+    const mentionedUsers = await User.find({ username: { $in: mentionedUsernames } });
+
+    const updated = await Todo.findByIdAndUpdate(req.params.id, {
+      title, description, tags, priority, mentionedUsers
+    }, { new: true });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 //Delete todo by ID
 router.delete('/:id', async (req, res) => {
@@ -49,33 +124,8 @@ router.delete('/:id', async (req, res) => {
     }
   });
 
-  router.get("/export", async (req, res) => {
-    try {
-      const fields = [
-        { label: "ID", value: "_id" },
-        { label: "Title", value: "title" },
-        { label: "Description", value: "description" },
-        { label: "Priority", value: "priority" },
-        { label: "Completed", value: "completed" },
-        {
-          label: "Assigned Users",
-          value: row => row.assignedUsers?.map(user => user.username).join(", ") || ""
-        },
-        { label: "Created At", value: "createdAt" },
-      ];
   
-      const json2csvParser = new Parser({ fields });
-      const csv = json2csvParser.parse(todos);
-  
-      res.header("Content-Type", "text/csv");
-      res.attachment("todos.csv");
-      res.send(csv);
-    } catch (error) {
-      console.error("Error exporting todos:", error);
-      res.status(500).json({ error: "Failed to export todos" });
-    }
-  });
-  
+
   
   
 

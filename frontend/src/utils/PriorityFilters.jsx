@@ -9,8 +9,8 @@ const PriorityFilters = ({priorities,onChange}) => {
           <input
             type="checkbox"
             className="rounded border-gray-300"
-            checked={priorities.high}
-            onChange={() => onChange("high")}
+            checked={priorities.High}
+            onChange={() => onChange("High")}
           />
           <span>High</span>
         </label>
@@ -18,8 +18,8 @@ const PriorityFilters = ({priorities,onChange}) => {
           <input
             type="checkbox"
             className="rounded border-gray-300"
-            checked={priorities.medium}
-            onChange={() => onChange("medium")}
+            checked={priorities.Medium}
+            onChange={() => onChange("Medium")}
           />
           <span>Medium</span>
         </label>
@@ -27,8 +27,8 @@ const PriorityFilters = ({priorities,onChange}) => {
           <input
             type="checkbox"
             className="rounded border-gray-300"
-            checked={priorities.low}
-            onChange={() => onChange("low")}
+            checked={priorities.Low}
+            onChange={() => onChange("Low")}
           />
           <span>Low</span>
         </label>

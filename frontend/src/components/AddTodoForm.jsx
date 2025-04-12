@@ -63,7 +63,7 @@ const AddTodoForm = ({ users = [], isOpen, onClose, onAddTodo }) => {
                             className="w-full border border-gray-300 p-2 rounded-md h-32"
                         >
                             {users?.map(user => (
-                                <option key={user._id} value={user.username}>
+                                <option key={user._id} value={user._id}>
                                     {user.username}
                                 </option>
                             ))}
@@ -98,7 +98,7 @@ const AddTodoForm = ({ users = [], isOpen, onClose, onAddTodo }) => {
                         <button
                             type="button"
                             onClick={() => append({ content: '' })}
-                            className="bg-blue-500 text-white px-3 py-1 rounded-md"
+                            className="bg-blue-200 text-blue-500 font-semibold px-3 py-1 rounded-md"
                         >
                             + Add Note
                         </button>
@@ -106,7 +106,7 @@ const AddTodoForm = ({ users = [], isOpen, onClose, onAddTodo }) => {
 
                     <button
                         type="submit"
-                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+                        className="bg-green-200 text-green-800 font-semibold px-4 py-2 rounded-md hover:bg-green-700"
                     >
                         Create Todo
                     </button>
