@@ -1,12 +1,25 @@
-import React from 'react'
+import React, {useEffect} from 'react'
 import TodoTags from '../utils/TodoTags'
 import { Edit2, MoreVertical, Trash2 } from 'lucide-react'
+import Service from '../api/Service'
 
 const TodoItem = ({ todo, onToggle, onDeleteTodo, onSelectTodo, onSelectEditTodo }) => {
   const handleRowClick = () => {
     onSelectTodo(todo?._id)
   }
+  const handleUpdate = async (data) => {
+   
+    try {
+      await Service.updateTodo(todo?._id, data);
+      window.location.reload();
+    } catch (error) {
+      console.error("Update failed:", error);
+    }
+  };
 
+  useEffect(() => {
+    (todo)
+  }, [todo])
   const stopPropagation = (e) => e.stopPropagation()
   
 
@@ -20,8 +33,9 @@ const TodoItem = ({ todo, onToggle, onDeleteTodo, onSelectTodo, onSelectEditTodo
           type="checkbox"
           checked={todo.completed}
           onChange={(e) => {
-            stopPropagation(e)
-            onToggle()
+            stopPropagation(e);
+            handleUpdate({ completed: !todo.completed });
+            onToggle();
           }}
           className="mt-1 rounded border-blue-500"
           onClick={stopPropagation}

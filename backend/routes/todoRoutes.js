@@ -9,16 +9,15 @@ router.post("/", async (req, res) => {
   try {
     const { title, description, tags, priority, assignedUsers, notes } =
       req.body;
-    console.log(req.body);
-    const assignedUsersData  = await Users.find({
-      username: { $in: assignedUsers },
+    const assignedUsersData = await Users.find({
+      _id: { $in: assignedUsers },
     });
     const todo = new Todo({
       title,
       description,
       tags,
       priority,
-      assignedUsers:assignedUsersData ,
+      assignedUsers: assignedUsersData,
       notes,
     });
     await todo.save();
@@ -29,13 +28,22 @@ router.post("/", async (req, res) => {
 });
 
 // Get All Todos with Pagination, Sorting, Filtering
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const { page = 1, limit = 10, tags, priority,search , user, sortBy = 'createdAt', order = 'desc' } = req.query;
+    const {
+      page = 1,
+      limit = 10,
+      tags,
+      priority,
+      search,
+      user,
+      sortBy = "createdAt",
+      order = "desc",
+    } = req.query;
     const filter = {};
-    if (tags) filter.tags = { $in: tags.split(',') };
+    if (tags) filter.tags = { $in: tags.split(",") };
     if (priority) filter.priority = priority;
-    if (user) filter.assignedUsers = user;
+    if (user) filter.assignedUsers = { $in: [user] };
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -44,10 +52,10 @@ router.get('/', async (req, res) => {
     }
 
     const todos = await Todo.find(filter)
-      .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
+      .sort({ [sortBy]: order === "desc" ? -1 : 1 })
       .skip((page - 1) * limit)
       .limit(Number(limit))
-      .populate('assignedUsers', 'username');
+      .populate("assignedUsers", "username");
 
     res.json(todos);
   } catch (error) {
@@ -68,7 +76,8 @@ router.get("/export", async (req, res) => {
       { label: "Completed", value: "completed" },
       {
         label: "Assigned Users",
-        value: row => row.assignedUsers?.map(user => user.username).join(", ") || ""
+        value: (row) =>
+          row.assignedUsers?.map((user) => user.username).join(", ") || "",
       },
       { label: "Created At", value: "createdAt" },
     ];
@@ -88,7 +97,10 @@ router.get("/export", async (req, res) => {
 //get todo by ID
 router.get("/:id", async (req, res) => {
   try {
-    const todo = await Todo.findById(req.params.id).populate("assignedUsers", "username");
+    const todo = await Todo.findById(req.params.id).populate(
+      "assignedUsers",
+      "username"
+    );
     if (!todo) {
       return res.status(404).json({ message: "Todo not found" });
     }
@@ -99,15 +111,23 @@ router.get("/:id", async (req, res) => {
 });
 
 // Update Todo
-router.put('/:id', async (req, res) => {
+router.patch("/:id", async (req, res) => {
   try {
-    const { title, description, tags, priority, mentionedUsernames } = req.body;
-    const mentionedUsers = await User.find({ username: { $in: mentionedUsernames } });
+    const { title, description, tags, priority, completed } = req.body;
+    console.log("console the request body", req.body);
 
-    const updated = await Todo.findByIdAndUpdate(req.params.id, {
-      title, description, tags, priority, mentionedUsers
-    }, { new: true });
-
+    const updated = await Todo.findByIdAndUpdate(
+      req.params.id,
+      {
+        title,
+        description,
+        tags,
+        priority,
+        completed
+      },
+      { new: true }
+    );
+    console.log("console the updatedData", updated);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -115,18 +135,13 @@ router.put('/:id', async (req, res) => {
 });
 
 //Delete todo by ID
-router.delete('/:id', async (req, res) => {
-    try {
-      await Todo.findByIdAndDelete(req.params.id);
-      res.json({ message: 'Todo deleted' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  
-
-  
-  
+router.delete("/:id", async (req, res) => {
+  try {
+    await Todo.findByIdAndDelete(req.params.id);
+    res.json({ message: "Todo deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 export default router;

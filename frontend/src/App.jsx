@@ -24,7 +24,10 @@ function App() {
       Medium: false,
       Low: false,
     },
+    tags:[]
   })
+
+  const uniqueTags = [...new Set((todos || []).flatMap((todo) => todo.tags || []))];
 
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -55,16 +58,20 @@ function App() {
       .filter(([_, val]) => val)
       .map(([key]) => key);
 
+      const selectedTags = filters.tags
+      .filter((tag) => tag.selected)
+      .map((tag) => tag.name);
+
     const response = await Service.getTodos({
       page: currentPage,
       limit: 10,
       user: selectedUserId,
       priority: selectedPriorities,
       search: searchQuery,
+      tags: selectedTags,
     });
 
     setTodos(response);
-    console.log(response)
     setTotalPages(response.totalPages);
   };
 
@@ -73,7 +80,6 @@ function App() {
     try {
       const response = await Service.getTodoById(id)
       setTodoByID(response)
-      console.log(response)
     } catch (error) {
       console.error("Error fetching todo by ID:", error)
     }
@@ -83,12 +89,12 @@ function App() {
 
   const exportAllTodos = async () => {
     try {
-     const response= await Service.exportTodos()
-     console.log(response)
+      const response = await Service.exportTodos()
     } catch (error) {
       console.error("Error exporting todos:", error)
     }
   }
+
 
   const handleDeleteTodo = async (id) => {
     try {
@@ -101,7 +107,6 @@ function App() {
 
   const handleUserChange = (userId) => {
     setSelectedUserId(userId)
-    console.log(userId)
     const user = users.find((u) => u._id === userId)
 
     setSelectedUser(user)
@@ -121,26 +126,30 @@ function App() {
     }))
   }
 
-  const handleTodoToggle = (username) => {
-    setTodos(todos.map((todo) => (todo.username === username ? { ...todo, completed: !todo.completed } : todo)))
-  }
+  const handleTodoToggle = (updatedTodo) => {
+    setTodos((prevTodos) =>
+      prevTodos.map((todo) =>
+        todo._id === updatedTodo._id ? updatedTodo : todo
+      )
+    );
+  };
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
   }
 
 
+
   useEffect(() => {
     fetchUsers()
   }, [])
   useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedUserId, filters]);
-
-
-  useEffect(() => {
-    fetchTodos();
-  }, [selectedUserId, filters, currentPage, todos.length]);
+    const delayDebounce = setTimeout(() => {
+      fetchTodos();
+    }, 500); // 500ms delay
+  
+    return () => clearTimeout(delayDebounce);
+  }, [selectedUserId, filters, currentPage, searchQuery]);
 
   return (
     <div className='min-h-screen flex flex-col bg-white'>
@@ -152,7 +161,7 @@ function App() {
         selectedUser={selectedUser}
       />
       <div className='flex max-md:flex-col flex-1 bg-gray-100 p-5'>
-        <Sidebar filters={filters} onFilterChange={handleFilterChange} />
+        <Sidebar filters={filters} onFilterChange={handleFilterChange} uniqueTags={uniqueTags} />
 
         <main className='flex-1 p-5'>
           <Todolist
@@ -163,13 +172,13 @@ function App() {
             searchQuery={searchQuery}
             onAddTodo={handleAddTodo}
             users={users}
+            onUpdateTodo={fetchTodos}
             onDeleteTodo={handleDeleteTodo}
           />
 
           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
           <TodoByID todo={todoByID} onClose={() => setTodoByID(null)} />
-
-        </main>
+          </main>
       </div>
     </div>
   )

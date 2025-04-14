@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
-const AddTodoForm = ({ users = [], isOpen, onClose, onAddTodo }) => {
+const AddTodoForm = ({  users= [], isOpen, onClose, onAddTodo }) => {
     const { register, handleSubmit, control, setValue,reset,formState:{errors} } = useForm()
 
     const { fields, append, remove } = useFieldArray({
@@ -11,10 +11,7 @@ const AddTodoForm = ({ users = [], isOpen, onClose, onAddTodo }) => {
     
 
     const onSubmit = (data) => {
-        console.log(data)
         onAddTodo(data)
-        // reset()
-        // onClose()
     }
     if (!isOpen) return null
     return (
@@ -54,12 +51,6 @@ const AddTodoForm = ({ users = [], isOpen, onClose, onAddTodo }) => {
                         <select
                             multiple
                             {...register('assignedUsers')}
-                            onChange={(e) =>
-                                setValue(
-                                    'assignedUsers',
-                                    Array.from(e.target.selectedOptions, (option) => option.value)
-                                )
-                            }
                             className="w-full border border-gray-300 p-2 rounded-md h-32"
                         >
                             {users?.map(user => (
@@ -71,9 +62,8 @@ const AddTodoForm = ({ users = [], isOpen, onClose, onAddTodo }) => {
                     </div>
 
                     <input
-                        type="text"
                         placeholder="Tags (comma separated)"
-                        {...register('tags')}
+                        {...register('tags', { setValueAs: value => value.split(',').map(tag => tag.trim()) })}
                         className="w-full border border-gray-300 p-2 rounded-md"
                     />
 

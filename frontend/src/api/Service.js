@@ -4,19 +4,17 @@ class Service {
   //To get all users
   static async getAllUsers() {
     const response = await axiosApi.get("/users");
-    console.log(response.data);
     return response.data;
   }
 
   //To create a new todo
   static async createTodo(todo) {
     const response = await axiosApi.post("/todos", todo);
-    console.log(response.data);
     return response.data;
   }
   
   //To get todo 
-  static async getTodos({ page, limit, user, priority, tags }) {
+  static async getTodos({ page, limit, user, priority, tags, search }) {
     const params = new URLSearchParams();
   
     if (page) params.append('page', page);
@@ -24,6 +22,7 @@ class Service {
     if (user) params.append('user', user);
     if (priority) params.append('priority', priority);
     if (tags && tags.length) params.append('tags', tags.join(','));
+    if (search) params.append('search', search);
   
     const response = await axiosApi.get(`/todos?${params.toString()}`);
     return response.data;
@@ -32,21 +31,18 @@ class Service {
   //To get todo by ID
   static async getTodoById(id) {
     const response = await axiosApi.get(`/todos/${id}`);
-    console.log(response.data);
     return response.data;
   }
 
   //To update todo by ID
   static async updateTodo(id, updatedtodo) {
-    const response = await axiosApi.put(`/todos/${id}`, updatedtodo);
-    console.log(response.data);
+    const response = await axiosApi.patch(`/todos/${id}`, updatedtodo);
     return response.data;
   }
 
   //To delete task by ID
   static async deleteTodoByID(id) {
     const response = await axiosApi.delete(`/todos/${id}`);
-    console.log(response.data);
     return response.data;
   }
 
@@ -57,7 +53,7 @@ class Service {
         responseType: "blob",
       });
   
-      const url = window.URL.createObjectURL(response.data); // no need for .blob()
+      const url = window.URL.createObjectURL(response.data); 
   
       const link = document.createElement("a");
       link.href = url;

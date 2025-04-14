@@ -1,5 +1,7 @@
 import React from 'react'
 import PriorityFilters from '../utils/PriorityFilters'
+import TodoTags from '../utils/TodoTags'
+// import TodoTags from '../utils/TodoTags'
 
 const Sidebar = ({ filters, onFilterChange }) => {
   return (
@@ -8,7 +10,7 @@ const Sidebar = ({ filters, onFilterChange }) => {
 
       <PriorityFilters priorities={filters.priority} onChange={(value) => onFilterChange("priority", value)} />
 
-      {/* <TagsFilter /> */}
+      {/* <TodoTags tags={filters.tags} onChange={(value) => onFilterChange("tags", value)}/> */}
     </aside>
   )
 }
