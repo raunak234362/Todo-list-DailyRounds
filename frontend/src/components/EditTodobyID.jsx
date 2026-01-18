@@ -1,51 +1,48 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import Service from '../api/Service';
+import { useForm } from 'react-hook-form';
 
-const EditTodobyID = ({ id, onClose }) => {
-  const [todo, setTodo] = useState(null);
+const EditTodobyID = ({ users = [], id, onClose  }) => {
+  const { register, handleSubmit, control, setValue, reset, formState: { errors } } = useForm()
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: '',
-    tags: '',
+    tags: [],
   });
 
+  const fetchTodo = async () => {
+    try {
+      const response = await Service.getTodoById(id);
+      const data = response;
+      setFormData({
+        title: data?.title || '',
+        description: data?.description || '',
+        priority: data?.priority || 'Low',
+        tags: data?.tags || [],
+      });
+    } catch (error) {
+      console.error("Error fetching todo:", error);
+    }
+  };
   useEffect(() => {
-    const fetchTodo = async () => {
-      try {
-        const response = await Service.getTodoById(id);
-        const data = response.data;
-        setTodo(data);
-        setFormData({
-          title: data?.title || '',
-          description: data?.description || '',
-          priority: data?.priority || 'Low',
-          tags: data?.tags?.join(', ') || '', // converting array to string
-        });
-      } catch (error) {
-        console.error("Error fetching todo:", error);
-      }
-    };
 
-    if (id) fetchTodo();
+    fetchTodo();
   }, [id]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (data) => {
+    const filledData = {
+      title: data.title || formData.title,
+      description: data.description || formData.description,
+      priority: data.priority || formData.priority,
+      tags: Array.isArray(data.tags) ? data.tags : formData.tags,
+    };
     try {
-      const updatedData = {
-        ...formData,
-        tags: formData.tags.split(',').map(tag => tag.trim()), // convert back to array
-      };
-      await Service.updateTodo(id, updatedData);
+      await Service.updateTodo(id, filledData);
+      window.location.reload();
       onClose();
     } catch (error) {
       console.error("Update failed:", error);
@@ -56,51 +53,63 @@ const EditTodobyID = ({ id, onClose }) => {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Edit Todo</h2>
+      <form onSubmit={handleSubmit(handleUpdate)}>
+        <label className="block font-medium mb-1">Title</label>
+        <input
+          type="text"
+          name="title"
+          defaultValue={formData?.title}
+          {...register('title')}
+          className="border px-3 py-2 w-full rounded mb-4"
+        />
 
-      <label className="block font-medium mb-1">Title</label>
-      <input
-        type="text"
-        name="title"
-        value={formData?.title}
-        onChange={handleChange}
-        className="border px-3 py-2 w-full rounded mb-4"
-      />
+        <label className="block font-medium mb-1">Description</label>
+        <textarea
+          name="description"
+          defaultValue={formData?.description}
+          {...register('description')}
+          className="border px-3 py-2 w-full rounded mb-4"
+        />
 
-      <label className="block font-medium mb-1">Description</label>
-      <textarea
-        name="description"
-        value={formData?.description}
-        onChange={handleChange}
-        className="border px-3 py-2 w-full rounded mb-4"
-      />
+        <label className="block font-medium mb-1">Priority</label>
+        <select
+          name="priority"
+          defaultValue={formData?.priority}
+          {...register('priority')}
+          className="border px-3 py-2 w-full rounded mb-4"
+        >
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
 
-      <label className="block font-medium mb-1">Priority</label>
-      <select
-        name="priority"
-        value={formData?.priority}
-        onChange={handleChange}
-        className="border px-3 py-2 w-full rounded mb-4"
-      >
-        <option value="Low">Low</option>
-        <option value="Medium">Medium</option>
-        <option value="High">High</option>
-      </select>
+        <label className="block font-medium mb-1">Tags (comma separated)</label>
+        <input
+          type="text"
+          name="tags"
+          defaultValue={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''}
+          {...register('tags', { setValueAs: value => value.split(',').map(tag => tag.trim()) })}
+          className="border px-3 py-2 w-full rounded mb-4"
+        />
+        {/* <select
+          multiple
+          {...register('assignedUsers')}
+          className="w-full border border-gray-300 p-2 rounded-md h-32"
+        >
+          {users?.map(user => (
+            <option key={user._id} value={user._id}>
+              {user.username}
+            </option>
+          ))}
+        </select> */}
 
-      <label className="block font-medium mb-1">Tags (comma separated)</label>
-      <input
-        type="text"
-        name="tags"
-        value={formData?.tags}
-        onChange={handleChange}
-        className="border px-3 py-2 w-full rounded mb-4"
-      />
-
-      <button
-        onClick={handleUpdate}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Save Changes
-      </button>
+        <button
+          type='submit'
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Save Changes
+        </button>
+      </form>
     </div>
   );
 };
